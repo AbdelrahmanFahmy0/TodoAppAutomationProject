@@ -252,10 +252,6 @@ Open `test-output/reports/index.html` in your browser for detailed test executio
 - Status change verification
 - Data validation at each step
 
-📸 **Automatic Screenshotting**
-- Screenshots captured on test failure
-- Stored in `test-output/screenshots/`
-
 📝 **Comprehensive Logging**
 - Log4j2 integration for detailed execution logs
 - Logs stored in `test-output/Logs/logs.log`
