@@ -4,7 +4,7 @@ import com.todo.drivers.GUIDriver;
 import com.todo.drivers.UITest;
 import com.todo.pages.TodosPage;
 import io.qameta.allure.*;
-import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -21,9 +21,14 @@ public class E2ETodoTest extends BaseTest {
     String updatedTodoName = todoName + " Updated";
 
     // Tests
-    @BeforeMethod
-    public void setupTodoTest() {
+    @BeforeClass
+    public void setup() {
         driver = new GUIDriver();
+    }
+
+    @BeforeMethod
+    public void preCondition() {
+        driver.androidDevice().openApp(appPackage);
     }
 
     @Test(description = "End-to-end test for a todo item")
@@ -44,10 +49,5 @@ public class E2ETodoTest extends BaseTest {
                 .swipeTodoForDelete(updatedTodoName)
                 .clickConfirmButton()
                 .verifyTodoIsDeleted(updatedTodoName);
-    }
-
-    @AfterMethod
-    public void tearDown() {
-        driver.quitDriver();
     }
 }

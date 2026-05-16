@@ -55,7 +55,10 @@ public class AppiumServerManager {
                 .usingPort(serverPort)
                 .withTimeout(Duration.ofSeconds(60))
                 .withLogFile(logFile)
-                .withArgument(() -> "--use-drivers", getDriverArg());
+                .withArgument(() -> "--use-drivers", getDriverArg())
+                .withArgument(() -> "--log-level", "error")
+                .withArgument(() -> "--log-timestamp")
+                .withArgument(() -> "--relaxed-security");
 
         service = AppiumDriverLocalService.buildService(builder);
         service.start();

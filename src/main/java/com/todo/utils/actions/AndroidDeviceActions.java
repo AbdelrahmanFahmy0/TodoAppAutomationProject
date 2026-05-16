@@ -1,5 +1,6 @@
 package com.todo.utils.actions;
 
+import com.todo.utils.dataReader.PropertyReader;
 import com.todo.utils.logs.LogsManager;
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.connection.ConnectionStateBuilder;
@@ -8,7 +9,7 @@ import io.appium.java_client.android.nativekey.KeyEvent;
 import org.openqa.selenium.ScreenOrientation;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.Map;
 
 public class AndroidDeviceActions {
 
@@ -134,8 +135,7 @@ public class AndroidDeviceActions {
      * @return The current instance of AndroidDeviceActions for method chaining.
      */
     public AndroidDeviceActions clearAppData(String appPackage) {
-        driver.executeScript("mobile: shell",
-                java.util.Map.of("command", "pm", "args", List.of("clear", appPackage)));
+        driver.executeScript("mobile: clearApp", Map.of("appId", appPackage));
         LogsManager.info("Cleared app data for: " + appPackage);
         return this;
     }
@@ -149,6 +149,18 @@ public class AndroidDeviceActions {
         String currentActivity = driver.currentActivity();
         LogsManager.info("Current activity: " + currentActivity);
         return currentActivity;
+    }
+
+    /**
+     * Starts a specific activity on the Android device using its name.
+     *
+     * @param activityName The name of the activity to start (e.g., "com.example.myapp.MainActivity").
+     * @return The current instance of AndroidDeviceActions for method chaining.
+     */
+    public AndroidDeviceActions startActivity(String activityName) {
+        driver.executeScript("mobile: startActivity", Map.of("component", PropertyReader.getProperty("android.app.package") + "/" + activityName));
+        LogsManager.info("Launching Activity: " + activityName);
+        return this;
     }
 
     // ─────────────────────────────────────────────

@@ -4,7 +4,7 @@ import com.todo.drivers.GUIDriver;
 import com.todo.drivers.UITest;
 import com.todo.pages.TodosPage;
 import io.qameta.allure.*;
-import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -20,10 +20,15 @@ public class CompleteTodoTest extends BaseTest {
     String todoName;
 
     // Tests
-    @BeforeMethod
-    public void setupTodoTest() {
-        todoName = testData.getJsonData("todoName") + getSimpleTimestamp();
+    @BeforeClass
+    public void setup() {
         driver = new GUIDriver();
+    }
+
+    @BeforeMethod
+    public void preCondition() {
+        driver.androidDevice().openApp(appPackage);
+        todoName = testData.getJsonData("todoName") + getSimpleTimestamp();
         new TodosPage(driver).clickAddButton().enterTodoName(todoName).clickSaveButton();
     }
 
@@ -53,10 +58,5 @@ public class CompleteTodoTest extends BaseTest {
     public void verifyNewTodoIsUnchecked() {
         new TodosPage(driver)
                 .verifyTodoIsNotCompleted(todoName);
-    }
-
-    @AfterMethod
-    public void tearDown() {
-        driver.quitDriver();
     }
 }
