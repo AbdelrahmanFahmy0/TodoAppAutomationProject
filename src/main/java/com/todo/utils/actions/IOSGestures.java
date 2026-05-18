@@ -4,6 +4,7 @@ import com.todo.utils.logs.LogsManager;
 import com.google.common.collect.ImmutableMap;
 import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.interactions.Pause;
 import org.openqa.selenium.interactions.PointerInput;
@@ -12,6 +13,7 @@ import org.openqa.selenium.remote.RemoteWebElement;
 
 import java.time.Duration;
 import java.util.Collections;
+import java.util.List;
 
 public class IOSGestures {
 
@@ -21,6 +23,25 @@ public class IOSGestures {
     public IOSGestures(IOSDriver driver) {
         this.driver = driver;
         actions = new ElementActions(driver);
+    }
+
+    /**
+     * Scrolls to the element specified by the locator using iOS native scroll.
+     * It performs multiple scroll attempts until the element is found and visible,
+     * or throws an exception if not found after max attempts.
+     *
+     * @param locator element locator
+     */
+    public void scrollToElement(By locator) {
+        int maxAttempts = 10;
+        for (int i = 0; i < maxAttempts; i++) {
+            List<WebElement> targets = driver.findElements(locator);
+            if (!targets.isEmpty() && targets.getFirst().isDisplayed()) {
+                return;
+            }
+            driver.executeScript("mobile: scroll", ImmutableMap.of("direction", "down"));
+        }
+        throw new NoSuchElementException("Element not found after " + maxAttempts + " scrolls: " + locator);
     }
 
     /**

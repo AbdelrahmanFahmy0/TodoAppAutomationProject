@@ -4,11 +4,10 @@ import com.todo.utils.WaitManager;
 import com.todo.utils.logs.LogsManager;
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
 import org.openqa.selenium.*;
-import org.openqa.selenium.interactions.PointerInput;
-import org.openqa.selenium.interactions.Sequence;
 
-import java.time.Duration;
 import java.util.List;
 
 public class ElementActions {
@@ -127,38 +126,6 @@ public class ElementActions {
     }
 
     /**
-     * Scrolls to the element specified by the locator using touch actions.
-     * It performs incremental scrolls until the element is visible or a maximum number of scrolls is reached.
-     *
-     * @param locator element locator
-     * @return this ElementActions instance for method chaining
-     */
-    public ElementActions scrollToElement(By locator) {
-        LogsManager.debug("Scrolling to element: " + locator);
-        int maxScrolls = 10;
-        for (int i = 0; i < maxScrolls; i++) {
-            if (isElementVisible(locator)) {
-                WebElement el = findElement(locator);
-                if (el.isDisplayed()) return this;
-            }
-            // Scroll down incrementally
-            Dimension size = driver.manage().window().getSize();
-            int startY = (int) (size.height * 0.7);
-            int endY = (int) (size.height * 0.3);
-            int centerX = size.width / 2;
-            PointerInput finger = new PointerInput(PointerInput.Kind.TOUCH, "finger");
-            Sequence scroll = new Sequence(finger, 0);
-            scroll.addAction(finger.createPointerMove(java.time.Duration.ZERO, PointerInput.Origin.viewport(), centerX, startY));
-            scroll.addAction(finger.createPointerDown(PointerInput.MouseButton.LEFT.asArg()));
-            scroll.addAction(finger.createPointerMove(java.time.Duration.ofMillis(600), PointerInput.Origin.viewport(), centerX, endY));
-            scroll.addAction(finger.createPointerUp(PointerInput.MouseButton.LEFT.asArg()));
-            driver.perform(List.of(scroll));
-        }
-        LogsManager.warn("Element may not be in view after " + maxScrolls + " scrolls: " + locator);
-        return this;
-    }
-
-    /**
      * Scrolls to the element containing the specified text using Android UIAutomator.
      * This method is specific to Android and uses a UIAutomator selector to find the element by its text content.
      *
@@ -171,6 +138,14 @@ public class ElementActions {
         return this;
     }
 
+    /**
+     * Retrieves the value of the specified attribute from the element located by the given locator.
+     * It scrolls to the element, and then gets the attribute value.
+     *
+     * @param locator   element locator
+     * @param attribute name of the attribute to retrieve
+     * @return value of the specified attribute, or null if not found
+     */
     public String getAttributeValue(By locator, String attribute) {
         return waitManager.fluentWait().until(d ->
                 {
@@ -243,6 +218,21 @@ public class ElementActions {
             return driver.findElement(locator).isSelected();
         } catch (NoSuchElementException e) {
             return false;
+        }
+    }
+
+    /**
+     * Scrolls to the element specified by the locator using platform-specific gestures.
+     * For Android, it uses AndroidGestures to scroll to the element.
+     * For iOS, it uses IOSGestures to scroll to the element.
+     *
+     * @param locator element locator
+     */
+    private void scrollToElement(By locator) {
+        if (driver instanceof AndroidDriver) {
+            new AndroidGestures((AndroidDriver) driver).scrollToElement(locator);
+        } else {
+            new IOSGestures((IOSDriver) driver).scrollToElement(locator);
         }
     }
 }

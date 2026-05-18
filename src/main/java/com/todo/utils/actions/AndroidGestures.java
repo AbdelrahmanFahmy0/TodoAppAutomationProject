@@ -3,17 +3,11 @@ package com.todo.utils.actions;
 import com.todo.utils.logs.LogsManager;
 import com.google.common.collect.ImmutableMap;
 import io.appium.java_client.android.AndroidDriver;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Pause;
-import org.openqa.selenium.interactions.PointerInput;
-import org.openqa.selenium.interactions.Sequence;
+import org.openqa.selenium.*;
 import org.openqa.selenium.remote.RemoteWebElement;
 
-import java.time.Duration;
-import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class AndroidGestures {
 
@@ -23,6 +17,32 @@ public class AndroidGestures {
     public AndroidGestures(AndroidDriver driver) {
         this.driver = driver;
         actions = new ElementActions(driver);
+    }
+
+    /**
+     * Scrolls to the element specified by the locator using a scroll gesture.
+     * It performs multiple scroll attempts until the element is found and visible, or throws an exception if not found after max attempts.
+     *
+     * @param locator element locator
+     */
+    public void scrollToElement(By locator) {
+        int maxAttempts = 10;
+        Dimension size = driver.manage().window().getSize();
+        int left = (int) (size.width * 0.1);
+        int top = (int) (size.height * 0.3);
+        int width = (int) (size.width * 0.8);
+        int height = (int) (size.height * 0.4);
+        for (int i = 0; i < maxAttempts; i++) {
+            List<WebElement> targets = driver.findElements(locator);
+            if (!targets.isEmpty() && targets.getFirst().isDisplayed()) {
+                return;
+            }
+            Boolean canScrollMore = (Boolean) ((JavascriptExecutor) driver).executeScript("mobile: swipeGesture", Map.of("left", left, "top", top, "width", width, "height", height, "direction", "up", "percent", 0.85));
+            if (Boolean.FALSE.equals(canScrollMore)) {
+                break; // No more content to scroll, exit loop
+            }
+        }
+        throw new NoSuchElementException("Element not found after " + maxAttempts + " scrolls: " + locator);
     }
 
     /**

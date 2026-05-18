@@ -6,10 +6,11 @@ import com.todo.utils.logs.LogsManager;
 import io.appium.java_client.service.local.AppiumDriverLocalService;
 import io.appium.java_client.service.local.AppiumServiceBuilder;
 
-import java.io.File;
-import java.net.URI;
-import java.net.URL;
+import java.io.OutputStream;
+import java.net.*;
 import java.time.Duration;
+
+import static com.todo.utils.PortUtils.killProcessOnPort;
 
 /**
  * Manages the lifecycle of the Appium local server.
@@ -26,6 +27,10 @@ public class AppiumServerManager {
     private AppiumServerManager() {
     }
 
+    /**
+     * Returns the singleton instance of AppiumServerManager.
+     * Uses double-checked locking for thread safety and performance.
+     */
     public static AppiumServerManager getInstance() {
         if (instance == null) {
             synchronized (AppiumServerManager.class) {
@@ -47,21 +52,40 @@ public class AppiumServerManager {
             return;
         }
 
-        File logFile = new File(LogsManager.LOGS_PATH + "logs.log");
         LogsManager.info("Starting Appium server on port " + serverPort + " ...");
         // Build the Appium service with custom configuration
         AppiumServiceBuilder builder = new AppiumServiceBuilder()
                 .withIPAddress(serverUrl.replace("http://", ""))
                 .usingPort(serverPort)
                 .withTimeout(Duration.ofSeconds(60))
-                .withLogFile(logFile)
                 .withArgument(() -> "--use-drivers", getDriverArg())
                 .withArgument(() -> "--log-level", "error")
                 .withArgument(() -> "--log-timestamp")
                 .withArgument(() -> "--relaxed-security");
-
         service = AppiumDriverLocalService.buildService(builder);
+
+        // Pipe Appium logs into your LogsManager
+        service.addOutPutStream(new OutputStream() {
+            private final StringBuilder buffer = new StringBuilder();
+
+            @Override
+            public void write(int b) {
+                char c = (char) b;
+                if (c == '\n') {
+                    String line = buffer.toString().trim();
+                    if (!line.isEmpty()) {
+                        LogsManager.error("[Appium] " + line);
+                    }
+                    buffer.setLength(0);
+                } else {
+                    buffer.append(c);
+                }
+            }
+        });
+
+        // Start the service
         service.start();
+
         if (service.isRunning()) {
             LogsManager.info("✅ Appium server started successfully at " + service.getUrl());
         } else {
@@ -73,9 +97,10 @@ public class AppiumServerManager {
      * Stops the Appium server if it is running.
      */
     public synchronized void stopServer() {
-        if (service != null && service.isRunning()) {
+        if (service != null) {
             LogsManager.info("Stopping Appium server ...");
             service.stop();
+            killProcessOnPort(serverPort); // Ensure the port is freed
             LogsManager.info("✅ Appium server stopped.");
         }
     }
@@ -85,7 +110,7 @@ public class AppiumServerManager {
      */
     public URL getServerUrl() {
         try {
-            if (service != null && service.isRunning()) {
+            if (isRunning()) {
                 return service.getUrl();
             }
             return new URI(serverUrl + ":" + serverPort).toURL();
@@ -94,10 +119,16 @@ public class AppiumServerManager {
         }
     }
 
+    /**
+     * Checks if the Appium server is currently running.
+     */
     public boolean isRunning() {
         return service != null && service.isRunning();
     }
 
+    /**
+     * Determines the appropriate driver argument based on the platform.
+     */
     private String getDriverArg() {
         if (Platform.isAndroid()) {
             return PropertyReader.getProperty("android.automation.name").toLowerCase();
